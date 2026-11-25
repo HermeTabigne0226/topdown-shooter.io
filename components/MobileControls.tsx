@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { MobileInputState } from "@/types/game";
 import { Zap, RotateCw } from "lucide-react";
 
@@ -11,13 +11,15 @@ interface MobileControlsProps {
   isReloading: boolean;
 }
 
-interface StickOffset {
-  x: number;
-  y: number;
+interface ActiveStick {
+  originX: number;
+  originY: number;
+  knobX: number;
+  knobY: number;
 }
 
-const MAX_STICK_RADIUS = 40;
-const AIM_DEADZONE = 0.18;
+const MAX_STICK_RADIUS = 44;
+const AIM_DEADZONE = 0.16;
 
 export default function MobileControls({
   mobileInputRef,
@@ -25,11 +27,22 @@ export default function MobileControls({
   canReload,
   isReloading,
 }: MobileControlsProps) {
-  const [leftKnob, setLeftKnob] = useState<StickOffset>({ x: 0, y: 0 });
-  const [rightKnob, setRightKnob] = useState<StickOffset>({ x: 0, y: 0 });
+  const [leftStick, setLeftStick] = useState<ActiveStick | null>(null);
+  const [rightStick, setRightStick] = useState<ActiveStick | null>(null);
 
   const leftOriginRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const rightOriginRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
+
+  // Reset mobile movement/aim state if controls unmount (e.g. pause/level-up)
+  useEffect(() => {
+    const input = mobileInputRef.current;
+    return () => {
+      input.moveX = 0;
+      input.moveY = 0;
+      input.isAiming = false;
+      input.isShooting = false;
+    };
+  }, [mobileInputRef]);
 
   const computeVector = (dx: number, dy: number) => {
     const dist = Math.hypot(dx, dy);
@@ -47,18 +60,15 @@ export default function MobileControls({
     };
   };
 
-  // Left (Move) Stick Handlers
+  // Left Half: Free-floating Movement Stick
   const handleLeftDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (leftOriginRef.current !== null) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    const rect = e.currentTarget.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    leftOriginRef.current = { x: cx, y: cy, pointerId: e.pointerId };
-    const { kx, ky, nx, ny } = computeVector(e.clientX - cx, e.clientY - cy);
-    setLeftKnob({ x: kx, y: ky });
-    mobileInputRef.current.moveX = nx;
-    mobileInputRef.current.moveY = ny;
+    leftOriginRef.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+    setLeftStick({ originX: e.clientX, originY: e.clientY, knobX: 0, knobY: 0 });
+    mobileInputRef.current.moveX = 0;
+    mobileInputRef.current.moveY = 0;
   };
 
   const handleLeftMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -67,7 +77,12 @@ export default function MobileControls({
       e.clientX - leftOriginRef.current.x,
       e.clientY - leftOriginRef.current.y
     );
-    setLeftKnob({ x: kx, y: ky });
+    setLeftStick({
+      originX: leftOriginRef.current.x,
+      originY: leftOriginRef.current.y,
+      knobX: kx,
+      knobY: ky,
+    });
     mobileInputRef.current.moveX = nx;
     mobileInputRef.current.moveY = ny;
   };
@@ -75,25 +90,20 @@ export default function MobileControls({
   const handleLeftUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!leftOriginRef.current || leftOriginRef.current.pointerId !== e.pointerId) return;
     leftOriginRef.current = null;
-    setLeftKnob({ x: 0, y: 0 });
+    setLeftStick(null);
     mobileInputRef.current.moveX = 0;
     mobileInputRef.current.moveY = 0;
   };
 
-  // Right (Aim + Fire) Stick Handlers
+  // Right Half: Free-floating Aim & Shoot Stick
   const handleRightDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (rightOriginRef.current !== null) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    const rect = e.currentTarget.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    rightOriginRef.current = { x: cx, y: cy, pointerId: e.pointerId };
-    const { kx, ky, nx, ny, mag } = computeVector(e.clientX - cx, e.clientY - cy);
-    setRightKnob({ x: kx, y: ky });
-    mobileInputRef.current.isAiming = true;
-    mobileInputRef.current.aimX = nx;
-    mobileInputRef.current.aimY = ny;
-    mobileInputRef.current.isShooting = mag >= AIM_DEADZONE;
+    rightOriginRef.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+    setRightStick({ originX: e.clientX, originY: e.clientY, knobX: 0, knobY: 0 });
+    mobileInputRef.current.isAiming = false;
+    mobileInputRef.current.isShooting = false;
   };
 
   const handleRightMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -102,8 +112,13 @@ export default function MobileControls({
       e.clientX - rightOriginRef.current.x,
       e.clientY - rightOriginRef.current.y
     );
-    setRightKnob({ x: kx, y: ky });
-    mobileInputRef.current.isAiming = true;
+    setRightStick({
+      originX: rightOriginRef.current.x,
+      originY: rightOriginRef.current.y,
+      knobX: kx,
+      knobY: ky,
+    });
+    mobileInputRef.current.isAiming = mag >= 0.08;
     mobileInputRef.current.aimX = nx;
     mobileInputRef.current.aimY = ny;
     mobileInputRef.current.isShooting = mag >= AIM_DEADZONE;
@@ -112,35 +127,81 @@ export default function MobileControls({
   const handleRightUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!rightOriginRef.current || rightOriginRef.current.pointerId !== e.pointerId) return;
     rightOriginRef.current = null;
-    setRightKnob({ x: 0, y: 0 });
+    setRightStick(null);
     mobileInputRef.current.isAiming = false;
     mobileInputRef.current.isShooting = false;
   };
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-30 select-none touch-none">
-      {/* Left Virtual Stick: Movement */}
+    <div className="pointer-events-none fixed inset-0 z-20 select-none touch-none">
+      {/* Left Half Touch Zone: Free-floating Movement */}
       <div
         onPointerDown={handleLeftDown}
         onPointerMove={handleLeftMove}
         onPointerUp={handleLeftUp}
         onPointerCancel={handleLeftUp}
-        className="pointer-events-auto absolute bottom-5 left-5 sm:bottom-8 sm:left-8 flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center rounded-full border-2 border-cyan-500/35 bg-zinc-950/45 backdrop-blur-sm touch-none"
+        className="pointer-events-auto absolute inset-y-0 left-0 w-1/2 touch-none"
       >
-        <div className="absolute inset-3 rounded-full border border-cyan-400/15" />
-        <div
-          className="h-12 w-12 rounded-full border-2 border-cyan-300 bg-cyan-500/40 shadow-[0_0_16px_rgba(34,211,238,0.5)] transition-transform duration-75"
-          style={{
-            transform: `translate(${leftKnob.x}px, ${leftKnob.y}px)`,
-          }}
-        />
-        <span className="pointer-events-none absolute -bottom-5 text-[9px] font-mono font-bold tracking-widest text-cyan-400/70">
-          MOVE
-        </span>
+        {!leftStick && (
+          <div className="pointer-events-none absolute bottom-14 left-6 flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-cyan-500/25 bg-zinc-950/20">
+            <span className="text-[9px] font-mono font-bold tracking-widest text-cyan-400/50">
+              WALK
+            </span>
+          </div>
+        )}
       </div>
 
+      {/* Right Half Touch Zone: Free-floating Aim & Shoot */}
+      <div
+        onPointerDown={handleRightDown}
+        onPointerMove={handleRightMove}
+        onPointerUp={handleRightUp}
+        onPointerCancel={handleRightUp}
+        className="pointer-events-auto absolute inset-y-0 right-0 w-1/2 touch-none"
+      >
+        {!rightStick && (
+          <div className="pointer-events-none absolute bottom-14 right-6 flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-rose-500/25 bg-zinc-950/20">
+            <span className="text-[9px] font-mono font-bold tracking-widest text-rose-400/50">
+              SHOOT
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Active Floating Left Joystick */}
+      {leftStick && (
+        <div
+          className="pointer-events-none fixed flex h-28 w-28 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-cyan-500/45 bg-zinc-950/45 backdrop-blur-sm"
+          style={{ left: leftStick.originX, top: leftStick.originY }}
+        >
+          <div className="absolute inset-3 rounded-full border border-cyan-400/20" />
+          <div
+            className="h-12 w-12 rounded-full border-2 border-cyan-300 bg-cyan-500/45 shadow-[0_0_16px_rgba(34,211,238,0.55)]"
+            style={{
+              transform: `translate(${leftStick.knobX}px, ${leftStick.knobY}px)`,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Active Floating Right Joystick */}
+      {rightStick && (
+        <div
+          className="pointer-events-none fixed flex h-28 w-28 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-rose-500/45 bg-zinc-950/45 backdrop-blur-sm"
+          style={{ left: rightStick.originX, top: rightStick.originY }}
+        >
+          <div className="absolute inset-3 rounded-full border border-rose-400/20" />
+          <div
+            className="h-12 w-12 rounded-full border-2 border-rose-300 bg-rose-500/45 shadow-[0_0_16px_rgba(244,63,94,0.55)]"
+            style={{
+              transform: `translate(${rightStick.knobX}px, ${rightStick.knobY}px)`,
+            }}
+          />
+        </div>
+      )}
+
       {/* Right Action Buttons (Dash + Reload) */}
-      <div className="pointer-events-auto absolute bottom-36 right-5 sm:bottom-44 sm:right-8 flex items-center gap-2.5 touch-none">
+      <div className="pointer-events-auto fixed bottom-24 right-4 sm:bottom-28 sm:right-6 z-30 flex items-center gap-2.5 touch-none">
         {canReload && (
           <button
             type="button"
@@ -176,26 +237,6 @@ export default function MobileControls({
           <Zap className="h-5 w-5" />
           <span className="text-[8px] font-mono font-bold tracking-wider">DASH</span>
         </button>
-      </div>
-
-      {/* Right Virtual Stick: Aim & Shoot */}
-      <div
-        onPointerDown={handleRightDown}
-        onPointerMove={handleRightMove}
-        onPointerUp={handleRightUp}
-        onPointerCancel={handleRightUp}
-        className="pointer-events-auto absolute bottom-5 right-5 sm:bottom-8 sm:right-8 flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center rounded-full border-2 border-rose-500/35 bg-zinc-950/45 backdrop-blur-sm touch-none"
-      >
-        <div className="absolute inset-3 rounded-full border border-rose-400/15" />
-        <div
-          className="h-12 w-12 rounded-full border-2 border-rose-300 bg-rose-500/40 shadow-[0_0_16px_rgba(244,63,94,0.5)] transition-transform duration-75"
-          style={{
-            transform: `translate(${rightKnob.x}px, ${rightKnob.y}px)`,
-          }}
-        />
-        <span className="pointer-events-none absolute -bottom-5 text-[9px] font-mono font-bold tracking-widest text-rose-400/70">
-          AIM / FIRE
-        </span>
       </div>
     </div>
   );

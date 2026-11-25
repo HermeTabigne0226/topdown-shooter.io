@@ -76,7 +76,10 @@ export default function HUD({
   const weaponList: WeaponType[] = ["PISTOL", "SHOTGUN", "RIFLE", "PLASMA", "RAILGUN"];
 
   const renderWeaponBar = (compact: boolean) => (
-    <div className="pointer-events-auto flex items-center gap-1 sm:gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-950/85 p-1.5 sm:p-2 shadow-xl backdrop-blur-md max-w-full overflow-x-auto">
+    <div
+      onPointerDown={(e) => e.stopPropagation()}
+      className="pointer-events-auto flex items-center gap-1 sm:gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-950/85 p-1.5 sm:p-2 shadow-xl backdrop-blur-md max-w-full overflow-x-auto"
+    >
       {weaponList.map((type, idx) => {
         const w = weapons[type];
         const isSelected = activeWeapon === type;
@@ -84,10 +87,11 @@ export default function HUD({
           <button
             key={type}
             disabled={!w.unlocked}
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onSelectWeapon(type)}
             className={`flex flex-col items-center justify-center rounded-lg ${
-              compact ? "px-2 py-1 min-w-[48px]" : "px-2.5 py-1.5"
-            } transition-all shrink-0 ${
+              compact ? "px-2.5 py-1.5 min-w-[52px]" : "px-2.5 py-1.5"
+            } transition-all shrink-0 active:scale-95 ${
               isSelected
                 ? "border border-cyan-400 bg-cyan-950/60 shadow-[0_0_12px_rgba(56,189,248,0.4)]"
                 : w.unlocked
@@ -95,7 +99,9 @@ export default function HUD({
                 : "opacity-35 cursor-not-allowed border border-transparent bg-zinc-900/30"
             }`}
           >
-            {!compact && <span className="text-[10px] font-mono text-zinc-400">[{idx + 1}]</span>}
+            <span className="text-[10px] font-mono font-bold text-zinc-400">
+              {compact ? idx + 1 : `[${idx + 1}]`}
+            </span>
             <span
               className={`${compact ? "text-[10px]" : "text-xs"} font-bold truncate max-w-[72px]`}
               style={{ color: w.unlocked ? w.color : "#71717a" }}
@@ -109,7 +115,7 @@ export default function HUD({
   );
 
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-2.5 sm:p-5 select-none">
+    <div className="pointer-events-none absolute inset-0 z-30 flex flex-col justify-between p-2.5 sm:p-5 select-none">
       {/* --- TOP BAR --- */}
       <div className="flex items-start justify-between gap-2">
         {/* Left: Wave, Score, and (in mobile mode) Compact Vitals */}
@@ -227,7 +233,7 @@ export default function HUD({
 
       {/* --- BOTTOM SECTION --- */}
       {mobileControls ? (
-        <div className="flex flex-col items-center gap-1.5 px-32 sm:px-40 pb-1">
+        <div className="flex flex-col items-center gap-1.5 px-3 pb-1">
           {renderWeaponBar(true)}
           <div className="flex flex-col gap-0.5 w-full max-w-md">
             <div className="flex justify-between items-center text-[10px] font-mono text-zinc-400 px-1">
