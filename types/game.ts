@@ -153,4 +153,16 @@ export interface GameSettings {
   musicVolume: number;
   screenShakeEnabled: boolean;
   autoFire: boolean;
+  mobileControls: boolean;
+}
+
+export interface MobileInputState {
+  moveX: number;
+  moveY: number;
+  aimX: number;
+  aimY: number;
+  isAiming: boolean;
+  isShooting: boolean;
+  dashRequested: boolean;
+  reloadRequested: boolean;
 }

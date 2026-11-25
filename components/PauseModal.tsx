@@ -2,7 +2,7 @@
 
 import React from "react";
 import { GameSettings } from "@/types/game";
-import { Play, RotateCcw, Volume2, Music, Sparkles } from "lucide-react";
+import { Play, RotateCcw, Volume2, Music, Sparkles, Gamepad2 } from "lucide-react";
 
 interface PauseModalProps {
   onResume: () => void;
@@ -18,8 +18,8 @@ export default function PauseModal({
   onUpdateSettings,
 }: PauseModalProps) {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
-      <div className="flex flex-col w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950/95 p-6 shadow-2xl">
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 animate-in fade-in duration-150">
+      <div className="flex flex-col w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950/95 p-5 sm:p-6 shadow-2xl">
         <div className="text-center mb-6">
           <span className="text-xs font-mono font-bold tracking-widest text-cyan-400 uppercase">
             SIMULATION SUSPENDED
@@ -79,6 +79,20 @@ export default function PauseModal({
               type="checkbox"
               checked={settings.autoFire}
               onChange={(e) => onUpdateSettings({ autoFire: e.target.checked })}
+              className="h-4 w-4 rounded accent-cyan-500 cursor-pointer"
+            />
+          </div>
+
+          {/* Mobile Touch Controls */}
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2 text-sm text-zinc-300">
+              <Gamepad2 className="h-4 w-4 text-cyan-400" />
+              Mobile Touch Controls
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.mobileControls}
+              onChange={(e) => onUpdateSettings({ mobileControls: e.target.checked })}
               className="h-4 w-4 rounded accent-cyan-500 cursor-pointer"
             />
           </div>

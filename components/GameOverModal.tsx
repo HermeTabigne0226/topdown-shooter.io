@@ -40,8 +40,8 @@ export default function GameOverModal({
   }, [score]);
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-300">
-      <div className="flex flex-col w-full max-w-md rounded-2xl border border-rose-950/80 bg-zinc-950/95 p-6 shadow-2xl text-center">
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-in fade-in duration-300">
+      <div className="flex flex-col w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-2xl border border-rose-950/80 bg-zinc-950/95 p-5 sm:p-6 shadow-2xl text-center">
         <div className="mb-4">
           <span className="text-xs font-mono font-bold tracking-widest text-rose-500 uppercase">
             SIGNAL LOST // TELEMETRY TERMINATED

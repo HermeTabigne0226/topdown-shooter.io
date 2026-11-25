@@ -7,6 +7,7 @@ import {
   Enemy,
   FloatingText,
   GameState,
+  MobileInputState,
   Particle,
   PlayerStats,
   WeaponConfig,
@@ -17,6 +18,7 @@ import { DEFAULT_WEAPONS } from "@/lib/weapons";
 
 interface GameCanvasProps {
   gameState: GameState;
+  restartTrigger: number;
   onGameOver: (finalScore: number, wavesCleared: number, enemiesKilled: number) => void;
   onLevelUp: () => void;
   onWaveComplete: (wave: number) => void;
@@ -46,28 +48,15 @@ interface GameCanvasProps {
   onWeaponChange: (weapon: WeaponType) => void;
   playerStatsRef: React.MutableRefObject<PlayerStats | null>;
   weaponsRef: React.MutableRefObject<Record<WeaponType, WeaponConfig>>;
+  mobileInputRef: React.MutableRefObject<MobileInputState>;
+  mobileControls: boolean;
 }
 
 const ARENA_WIDTH = 2600;
 const ARENA_HEIGHT = 2600;
 
-export default function GameCanvas({
-  gameState,
-  onGameOver,
-  onLevelUp,
-  onWaveComplete,
-  onStatsUpdate,
-  autoFire,
-  screenShakeEnabled,
-  activeWeapon,
-  onWeaponChange,
-  playerStatsRef,
-  weaponsRef,
-}: GameCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // Gameplay state kept in persistent mutable ref to maintain 60-120 FPS
-  const stateRef = useRef({
+function createInitialGameState() {
+  return {
     player: {
       x: ARENA_WIDTH / 2,
       y: ARENA_HEIGHT / 2,
@@ -99,7 +88,7 @@ export default function GameCanvas({
       quadDamageTimer: 0,
       invulnerableTimer: 0,
     } as PlayerStats,
-    weapons: { ...DEFAULT_WEAPONS },
+    weapons: structuredClone(DEFAULT_WEAPONS) as Record<WeaponType, WeaponConfig>,
     ammo: {
       PISTOL: 999999,
       SHOTGUN: 8,
@@ -137,7 +126,30 @@ export default function GameCanvas({
     camera: { x: ARENA_WIDTH / 2, y: ARENA_HEIGHT / 2 },
     screenShake: { x: 0, y: 0, intensity: 0 },
     lastFrameTime: performance.now(),
-  });
+  };
+}
+
+export default function GameCanvas({
+  gameState,
+  restartTrigger,
+  onGameOver,
+  onLevelUp,
+  onWaveComplete,
+  onStatsUpdate,
+  autoFire,
+  screenShakeEnabled,
+  activeWeapon,
+  onWeaponChange,
+  playerStatsRef,
+  weaponsRef,
+  mobileInputRef,
+  mobileControls,
+}: GameCanvasProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Gameplay state kept in persistent mutable ref to maintain 60-120 FPS
+  const stateRef = useRef(createInitialGameState());
+  const lastRestartTriggerRef = useRef(restartTrigger);
 
   // Keep external refs synchronized
   useEffect(() => {
@@ -151,33 +163,38 @@ export default function GameCanvas({
     stateRef.current.isReloading = false;
   }, [activeWeapon]);
 
-  // Reset or initialize on PLAYING state
+  // Reset game state on explicit restart or when starting after death
   useEffect(() => {
-    if (gameState === "PLAYING" && stateRef.current.player.health <= 0) {
-      // Re-initialize for fresh game
-      const s = stateRef.current;
-      s.player.health = s.player.maxHealth;
-      s.player.shield = s.player.maxShield;
-      s.player.x = ARENA_WIDTH / 2;
-      s.player.y = ARENA_HEIGHT / 2;
-      s.player.score = 0;
-      s.player.level = 1;
-      s.player.xp = 0;
-      s.player.xpToNextLevel = 100;
-      s.wave = 1;
-      s.enemiesKilled = 0;
-      s.bullets = [];
-      s.enemies = [];
-      s.drops = [];
-      s.particles = [];
-      s.floatingTexts = [];
-      s.waveSpawnedEnemies = 0;
-      s.waveTotalEnemies = 12;
-      s.waveSpawningActive = true;
-      s.weapons = JSON.parse(JSON.stringify(DEFAULT_WEAPONS));
-      s.ammo = { PISTOL: 999999, SHOTGUN: 8, RIFLE: 40, PLASMA: 6, RAILGUN: 4 };
+    const isExplicitRestart = restartTrigger !== lastRestartTriggerRef.current;
+    const isRestartAfterDeath = gameState === "PLAYING" && stateRef.current.player.health <= 0;
+    if (isExplicitRestart || isRestartAfterDeath) {
+      lastRestartTriggerRef.current = restartTrigger;
+      const freshState = createInitialGameState();
+      stateRef.current = freshState;
+      playerStatsRef.current = freshState.player;
+      weaponsRef.current = freshState.weapons;
+      onStatsUpdate({
+        health: freshState.player.health,
+        maxHealth: freshState.player.maxHealth,
+        shield: freshState.player.shield,
+        maxShield: freshState.player.maxShield,
+        ammo: freshState.ammo.PISTOL,
+        maxAmmo: freshState.weapons.PISTOL.ammoMax,
+        isReloading: false,
+        reloadProgress: 0,
+        score: 0,
+        combo: 1,
+        level: 1,
+        xp: 0,
+        xpToNextLevel: 100,
+        wave: 1,
+        activeWeapon: "PISTOL",
+        weapons: freshState.weapons,
+        dashReady: true,
+        activePowerup: null,
+      });
     }
-  }, [gameState]);
+  }, [restartTrigger, gameState, playerStatsRef, weaponsRef, onStatsUpdate]);
 
   // Main Game Loop Effect
   useEffect(() => {
@@ -407,17 +424,27 @@ export default function GameCanvas({
 
       if (gameState === "PLAYING") {
         // 1. UPDATE CONTROLS & PLAYER MOVEMENT
-        let moveX = 0;
-        let moveY = 0;
+        const mobile = mobileInputRef.current;
+        if (mobile.dashRequested) {
+          mobile.dashRequested = false;
+          attemptDash();
+        }
+        if (mobile.reloadRequested) {
+          mobile.reloadRequested = false;
+          initiateReload();
+        }
+
+        let moveX = mobile.moveX;
+        let moveY = mobile.moveY;
         if (s.keys["KeyW"] || s.keys["ArrowUp"]) moveY -= 1;
         if (s.keys["KeyS"] || s.keys["ArrowDown"]) moveY += 1;
         if (s.keys["KeyA"] || s.keys["ArrowLeft"]) moveX -= 1;
         if (s.keys["KeyD"] || s.keys["ArrowRight"]) moveX += 1;
 
-        if (moveX !== 0 && moveY !== 0) {
-          const invSqrt2 = 0.707106;
-          moveX *= invSqrt2;
-          moveY *= invSqrt2;
+        const moveMag = Math.hypot(moveX, moveY);
+        if (moveMag > 1) {
+          moveX /= moveMag;
+          moveY /= moveMag;
         }
 
         let currentSpeed = s.player.speed;
@@ -450,10 +477,16 @@ export default function GameCanvas({
         s.player.y = Math.max(pad, Math.min(ARENA_HEIGHT - pad, s.player.y));
 
         // Aiming angle
-        s.player.angle = Math.atan2(
-          s.mouse.worldY - s.player.y,
-          s.mouse.worldX - s.player.x
-        );
+        if (mobile.isAiming && Math.hypot(mobile.aimX, mobile.aimY) > 0.1) {
+          s.player.angle = Math.atan2(mobile.aimY, mobile.aimX);
+        } else if (!mobileControls) {
+          s.player.angle = Math.atan2(
+            s.mouse.worldY - s.player.y,
+            s.mouse.worldX - s.player.x
+          );
+        } else if (moveMag > 0.2) {
+          s.player.angle = Math.atan2(moveY, moveX);
+        }
 
         // Shield regeneration logic
         if (
@@ -493,7 +526,7 @@ export default function GameCanvas({
         }
 
         // 2. SHOOTING LOGIC
-        const shouldShoot = (s.mouse.isDown || autoFire) && !s.isReloading;
+        const shouldShoot = (s.mouse.isDown || mobile.isShooting || autoFire) && !s.isReloading;
         const curW = s.weapons[s.activeWeapon];
         const effectiveFireRate = curW.fireRate / s.player.fireRateMultiplier;
 
@@ -1536,6 +1569,8 @@ export default function GameCanvas({
     onWaveComplete,
     onStatsUpdate,
     onWeaponChange,
+    mobileInputRef,
+    mobileControls,
   ]);
 
   return (

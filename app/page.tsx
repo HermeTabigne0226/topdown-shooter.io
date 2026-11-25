@@ -7,9 +7,11 @@ import StartScreen from "@/components/StartScreen";
 import UpgradeModal from "@/components/UpgradeModal";
 import PauseModal from "@/components/PauseModal";
 import GameOverModal from "@/components/GameOverModal";
+import MobileControls from "@/components/MobileControls";
 import {
   GameSettings,
   GameState,
+  MobileInputState,
   PlayerStats,
   UpgradeOption,
   WeaponConfig,
@@ -25,6 +27,7 @@ export default function GamePage() {
   const [upgradeOptions, setUpgradeOptions] = useState<UpgradeOption[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [restartTrigger, setRestartTrigger] = useState(0);
 
   // Game Settings
   const [settings, setSettings] = useState<GameSettings>({
@@ -32,7 +35,21 @@ export default function GamePage() {
     musicVolume: 0.35,
     screenShakeEnabled: true,
     autoFire: false,
+    mobileControls: false,
   });
+
+  // Auto-detect touch / mobile devices on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isTouch =
+        window.matchMedia("(pointer: coarse)").matches ||
+        "ontouchstart" in window ||
+        navigator.maxTouchPoints > 0;
+      if (isTouch) {
+        setSettings((prev) => ({ ...prev, mobileControls: true }));
+      }
+    }
+  }, []);
 
   // End game stats
   const [finalStats, setFinalStats] = useState({
@@ -66,6 +83,16 @@ export default function GamePage() {
   // Mutable refs shared with canvas loop
   const playerStatsRef = useRef<PlayerStats | null>(null);
   const weaponsRef = useRef<Record<WeaponType, WeaponConfig>>({ ...DEFAULT_WEAPONS });
+  const mobileInputRef = useRef<MobileInputState>({
+    moveX: 0,
+    moveY: 0,
+    aimX: 0,
+    aimY: 0,
+    isAiming: false,
+    isShooting: false,
+    dashRequested: false,
+    reloadRequested: false,
+  });
 
   // Start game handler
   const handleStartGame = () => {
@@ -84,7 +111,24 @@ export default function GamePage() {
   }, []);
 
   const handleRestart = () => {
+    mobileInputRef.current = {
+      moveX: 0,
+      moveY: 0,
+      aimX: 0,
+      aimY: 0,
+      isAiming: false,
+      isShooting: false,
+      dashRequested: false,
+      reloadRequested: false,
+    };
+    setRestartTrigger((prev) => prev + 1);
+    setActiveWeapon("PISTOL");
+    setUpgradeOptions([]);
     setGameState("PLAYING");
+    if (!isMuted) {
+      sound.startMusic();
+      setIsMusicPlaying(true);
+    }
   };
 
   // Level Up / Perk selection
@@ -159,10 +203,11 @@ export default function GamePage() {
   }, [gameState, handlePause, handleResume]);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-black select-none">
+    <main className="relative w-screen h-dvh overflow-hidden bg-black select-none touch-none">
       {/* 2D HTML5 Canvas Game Engine */}
       <GameCanvas
         gameState={gameState}
+        restartTrigger={restartTrigger}
         onGameOver={handleGameOver}
         onLevelUp={handleLevelUp}
         onWaveComplete={handleWaveComplete}
@@ -173,6 +218,8 @@ export default function GamePage() {
         onWeaponChange={setActiveWeapon}
         playerStatsRef={playerStatsRef}
         weaponsRef={weaponsRef}
+        mobileInputRef={mobileInputRef}
+        mobileControls={settings.mobileControls}
       />
 
       {/* Cyberpunk HUD */}
@@ -202,6 +249,17 @@ export default function GamePage() {
           onPause={handlePause}
           isMuted={isMuted}
           isMusicPlaying={isMusicPlaying}
+          mobileControls={settings.mobileControls}
+        />
+      )}
+
+      {/* Mobile Touch Joysticks & Action Buttons */}
+      {gameState === "PLAYING" && settings.mobileControls && (
+        <MobileControls
+          mobileInputRef={mobileInputRef}
+          dashReady={hudStats.dashReady}
+          canReload={hudStats.maxAmmo < 999999 && hudStats.ammo < hudStats.maxAmmo}
+          isReloading={hudStats.isReloading}
         />
       )}
 

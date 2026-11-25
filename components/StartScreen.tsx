@@ -26,21 +26,21 @@ export default function StartScreen({ onStart }: StartScreenProps) {
   }, []);
 
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md p-6 select-none overflow-y-auto">
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md p-4 sm:p-6 select-none overflow-y-auto">
       {/* Background neon grid decoration */}
       <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:32px_32px] opacity-15 pointer-events-none" />
 
       <div className="relative z-10 flex flex-col items-center max-w-2xl w-full text-center my-auto">
         {/* Title Badges */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/40 bg-cyan-950/50 px-3.5 py-1 text-xs font-mono font-semibold text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] mb-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/40 bg-cyan-950/50 px-3 py-1 text-[11px] sm:text-xs font-mono font-semibold text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] mb-3 sm:mb-4">
           <Zap className="h-3.5 w-3.5 text-cyan-300" />
-          TOP-DOWN NEXT.JS ARENA SHOOTER
+          TOP-DOWN ARENA SHOOTER
         </div>
 
-        <h1 className="text-5xl sm:text-7xl font-black tracking-tight text-white drop-shadow-[0_0_35px_rgba(56,189,248,0.4)]">
+        <h1 className="text-4xl sm:text-7xl font-black tracking-tight text-white drop-shadow-[0_0_35px_rgba(56,189,248,0.4)]">
           CYBER<span className="text-cyan-400">STORM</span>
         </h1>
-        <p className="text-sm sm:text-base text-zinc-400 max-w-md mt-3 leading-relaxed">
+        <p className="text-xs sm:text-base text-zinc-400 max-w-md mt-2 sm:mt-3 leading-relaxed">
           Survive escalating waves of rogue cyber-drones. Level up, unlock devastating futuristic weapons, and dominate the arena.
         </p>
 
@@ -116,6 +116,10 @@ export default function StartScreen({ onStart }: StartScreenProps) {
             <div className="flex items-center gap-2">
               <kbd className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-[11px] text-cyan-300 border border-zinc-700">Esc / P</kbd>
               <span>Pause Mission</span>
+            </div>
+            <div className="flex items-center gap-2 sm:col-span-2">
+              <kbd className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-[11px] text-rose-300 border border-zinc-700">Touch Sticks</kbd>
+              <span>Left Stick: Move • Right Stick: Aim & Auto-Fire</span>
             </div>
           </div>
         </div>

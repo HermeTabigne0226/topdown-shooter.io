@@ -62,8 +62,8 @@ const RARITY_STYLES = {
 
 export default function UpgradeModal({ options, onSelect }: UpgradeModalProps) {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="flex flex-col items-center max-w-4xl w-full">
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-3 sm:p-4 animate-in fade-in duration-200 overflow-y-auto">
+      <div className="flex flex-col items-center max-w-4xl w-full max-h-[92dvh] overflow-y-auto my-auto py-2">
         <div className="text-center mb-6">
           <span className="text-xs font-mono font-bold tracking-widest text-amber-400 uppercase">
             COMBAT UPGRADE AVAILABLE
