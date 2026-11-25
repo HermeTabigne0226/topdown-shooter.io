@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Top-Down Arena Shooter (Next.js & Electron)
 
-## Getting Started
+A fast-paced 2D top-down arena survival game built with **Next.js 16**, **React 19**, **HTML5 Canvas**, **Tailwind CSS**, and the **Web Audio API**. It can be run in the browser or as a standalone Windows desktop executable (`.exe`).
 
-First, run the development server:
+---
 
+## 🎮 Play Options
+
+### Option 1: Run the Standalone Windows Executable (.exe)
+1. Open the folder: `dist/win-unpacked/`
+2. Run **`Cyberstorm Neon Survivor.exe`**
+3. Or double-click **`Launch Game.bat`** in the project root folder.
+
+### Option 2: Run in Web Browser
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Open [http://localhost:3000](http://localhost:3000) (or `http://localhost:3001`) in your browser.
+
+---
+
+## 🕹️ Controls
+
+| Action | Key / Input |
+|---|---|
+| **Move** | `W`, `A`, `S`, `D` or Arrow Keys |
+| **Aim** | Mouse Cursor |
+| **Shoot** | Left Click / Hold |
+| **Dash (Invulnerability)** | `Space` or `Shift` |
+| **Reload** | `R` (auto-reloads when empty) |
+| **Switch Weapons** | Keys `1` to `5` or Mouse Wheel |
+| **Pause Menu** | `Esc` or `P` |
+
+---
+
+## 🚀 Features
+
+- **60+ FPS Canvas Engine**: The physics and rendering loop uses `requestAnimationFrame` and mutable references to prevent unnecessary React re-renders.
+- **5 Weapons**: Pulse Blaster (infinite ammo), Scatter Cannon (shotgun), Vortex Carbine (assault rifle), Nova Launcher (explosive AoE), and Quasar Railgun (piercing laser).
+- **Procedural Audio**: Zero external audio files required. Sound effects and synth background music are generated dynamically using the browser Web Audio API.
+- **Enemy Varieties & Waves**: Fast crawlers, agile stalkers, ranged spitters, armored brutes, and wave bosses with radial bullet patterns.
+- **Shield & Dash Mechanics**: Regenerating energy shields and tactical dash with temporary invulnerability.
+- **Upgrades System**: Level up to choose from randomized stat perks.
+- **High Score Tracking**: Stores best runs in `localStorage`.
+
+---
+
+## 📦 Project Structure
+
+```
+├── app/
+│   ├── globals.css       # Tailwind CSS styles and reset
+│   ├── layout.tsx        # Root HTML layout and font setup
+│   └── page.tsx          # Main orchestrator component
+├── components/
+│   ├── GameCanvas.tsx    # Canvas rendering and game physics loop
+│   ├── HUD.tsx           # Health, shield, ammo, and score overlay
+│   ├── StartScreen.tsx   # Title screen and controls overview
+│   ├── UpgradeModal.tsx  # Level-up perk selection dialog
+│   ├── PauseModal.tsx    # Settings and options modal
+│   └── GameOverModal.tsx # End game statistics and restart
+├── electron/
+│   └── main.js           # Desktop window runner with embedded local server
+├── lib/
+│   ├── audio.ts          # Web Audio API sound synthesizer
+│   ├── weapons.ts        # Weapon configuration and damage stats
+│   └── upgrades.ts       # Perk options and stat upgrade effects
+├── types/
+│   └── game.ts           # TypeScript interfaces and types
+├── Launch Game.bat       # Quick-launch batch file for Windows
+├── next.config.ts        # Next.js export configuration
+└── package.json          # Dependencies and scripts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Building the Standalone .exe
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+To rebuild the Windows application from source:
 
-## Learn More
+```bash
+npm run build
+npx electron-builder --win --dir
+```
 
-To learn more about Next.js, take a look at the following resources:
+Output files will be generated in `dist/win-unpacked/`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📄 License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT

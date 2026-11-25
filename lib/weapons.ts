@@ -1,0 +1,95 @@
+import { WeaponConfig, WeaponType } from "@/types/game";
+
+export const DEFAULT_WEAPONS: Record<WeaponType, WeaponConfig> = {
+  PISTOL: {
+    type: "PISTOL",
+    name: "Pulse Blaster",
+    damage: 28,
+    fireRate: 200,
+    bulletSpeed: 14,
+    bulletCount: 1,
+    spread: 0.04,
+    ammoMax: 999999, // infinite ammo
+    reloadTime: 600,
+    color: "#38bdf8", // neon cyan
+    bulletRadius: 4.5,
+    pierce: 1,
+    screenShake: 2,
+    soundPitch: 1,
+    description: "Standard issue energy sidearm with unlimited capacity.",
+    unlocked: true,
+  },
+  SHOTGUN: {
+    type: "SHOTGUN",
+    name: "Scatter Cannon",
+    damage: 18, // 18 * 7 = 126 max damage up close!
+    fireRate: 650,
+    bulletSpeed: 13,
+    bulletCount: 7,
+    spread: 0.28,
+    ammoMax: 8,
+    reloadTime: 1400,
+    color: "#f97316", // neon orange
+    bulletRadius: 3.5,
+    pierce: 1,
+    screenShake: 6,
+    soundPitch: 0.8,
+    description: "Fires 7 high-impact kinetic pellets in a devastating cone.",
+    unlocked: false,
+  },
+  RIFLE: {
+    type: "RIFLE",
+    name: "Vortex Carbine",
+    damage: 22,
+    fireRate: 95, // rapid full-auto
+    bulletSpeed: 16,
+    bulletCount: 1,
+    spread: 0.09,
+    ammoMax: 40,
+    reloadTime: 1200,
+    color: "#a855f7", // neon purple
+    bulletRadius: 3.5,
+    pierce: 1,
+    screenShake: 3,
+    soundPitch: 1.2,
+    description: "High cycle-rate plasma assault weapon. Melts through mobs.",
+    unlocked: false,
+  },
+  PLASMA: {
+    type: "PLASMA",
+    name: "Nova Launcher",
+    damage: 90,
+    fireRate: 850,
+    bulletSpeed: 9,
+    bulletCount: 1,
+    spread: 0.02,
+    ammoMax: 6,
+    reloadTime: 1800,
+    color: "#22c55e", // neon lime green
+    bulletRadius: 8,
+    pierce: 1,
+    explosiveRadius: 95,
+    screenShake: 10,
+    soundPitch: 0.6,
+    description: "Launches volatile unstable plasma spheres that detonate on impact.",
+    unlocked: false,
+  },
+  RAILGUN: {
+    type: "RAILGUN",
+    name: "Quasar Railgun",
+    damage: 160,
+    fireRate: 1100,
+    bulletSpeed: 28,
+    bulletCount: 1,
+    spread: 0.01,
+    ammoMax: 4,
+    reloadTime: 2000,
+    color: "#ec4899", // neon hot pink
+    bulletRadius: 5.5,
+    pierce: 5, // pierces 5 enemies!
+    screenShake: 9,
+    soundPitch: 1.5,
+    description: "Extreme velocity particle beam piercing through multiple enemies in line.",
+    unlocked: false,
+  },
+};
