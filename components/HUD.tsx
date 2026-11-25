@@ -115,7 +115,15 @@ export default function HUD({
   );
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-30 flex flex-col justify-between p-2.5 sm:p-5 select-none">
+    <div
+      className="pointer-events-none absolute inset-0 z-30 flex flex-col justify-between p-2.5 sm:p-5 select-none"
+      style={{
+        paddingTop: "max(0.625rem, env(safe-area-inset-top))",
+        paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))",
+        paddingLeft: "max(0.625rem, env(safe-area-inset-left))",
+        paddingRight: "max(0.625rem, env(safe-area-inset-right))",
+      }}
+    >
       {/* --- TOP BAR --- */}
       <div className="flex items-start justify-between gap-2">
         {/* Left: Wave, Score, and (in mobile mode) Compact Vitals */}
@@ -201,7 +209,10 @@ export default function HUD({
         </div>
 
         {/* Right: Controls & Buttons */}
-        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div
+          onPointerDown={(e) => e.stopPropagation()}
+          className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 shrink-0"
+        >
           <button
             onClick={onToggleMusic}
             title="Toggle Synth Music"
