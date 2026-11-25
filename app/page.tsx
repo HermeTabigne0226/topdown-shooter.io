@@ -25,6 +25,7 @@ export default function GamePage() {
   const [gameState, setGameState] = useState<GameState>("START");
   const [activeWeapon, setActiveWeapon] = useState<WeaponType>("PISTOL");
   const [upgradeOptions, setUpgradeOptions] = useState<UpgradeOption[]>([]);
+  const [showMobileGuide, setShowMobileGuide] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [restartTrigger, setRestartTrigger] = useState(0);
@@ -96,6 +97,7 @@ export default function GamePage() {
 
   // Start game handler
   const handleStartGame = () => {
+    setShowMobileGuide(true);
     setGameState("PLAYING");
     sound.startMusic();
     setIsMusicPlaying(true);
@@ -124,6 +126,7 @@ export default function GamePage() {
     setRestartTrigger((prev) => prev + 1);
     setActiveWeapon("PISTOL");
     setUpgradeOptions([]);
+    setShowMobileGuide(true);
     setGameState("PLAYING");
     if (!isMuted) {
       sound.startMusic();
@@ -260,6 +263,8 @@ export default function GamePage() {
           dashReady={hudStats.dashReady}
           canReload={hudStats.maxAmmo < 999999 && hudStats.ammo < hudStats.maxAmmo}
           isReloading={hudStats.isReloading}
+          showGuide={showMobileGuide}
+          onDismissGuide={() => setShowMobileGuide(false)}
         />
       )}
 

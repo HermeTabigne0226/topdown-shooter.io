@@ -205,9 +205,19 @@ export default function GameCanvas({
 
     let animationFrameId: number;
 
+    const getCameraScale = (viewW: number, viewH: number) => {
+      // Scale viewport responsively for small phones vs tablets/desktops
+      return Math.max(0.62, Math.min(1.0, Math.min(viewW / 900, viewH / 580)));
+    };
+
     const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const viewW = window.innerWidth;
+      const viewH = window.innerHeight;
+      canvas.width = Math.floor(viewW * dpr);
+      canvas.height = Math.floor(viewH * dpr);
+      canvas.style.width = `${viewW}px`;
+      canvas.style.height = `${viewH}px`;
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -246,10 +256,13 @@ export default function GameCanvas({
       stateRef.current.mouse.x = mouseX;
       stateRef.current.mouse.y = mouseY;
 
-      // Calculate world coordinates
+      // Calculate world coordinates accounting for responsive camera scale
       const cam = stateRef.current.camera;
-      stateRef.current.mouse.worldX = mouseX - canvas.width / 2 + cam.x;
-      stateRef.current.mouse.worldY = mouseY - canvas.height / 2 + cam.y;
+      const viewW = window.innerWidth;
+      const viewH = window.innerHeight;
+      const camScale = getCameraScale(viewW, viewH);
+      stateRef.current.mouse.worldX = (mouseX - viewW / 2) / camScale + cam.x;
+      stateRef.current.mouse.worldY = (mouseY - viewH / 2) / camScale + cam.y;
     };
 
     const handleMouseDown = (e: MouseEvent) => {
@@ -1073,7 +1086,12 @@ export default function GameCanvas({
       }
 
       // --- RENDERING ---
-      renderScene(ctx, canvas.width, canvas.height);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const viewW = window.innerWidth;
+      const viewH = window.innerHeight;
+      const camScale = getCameraScale(viewW, viewH);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      renderScene(ctx, viewW, viewH, camScale);
 
       animationFrameId = requestAnimationFrame(loop);
     };
@@ -1314,7 +1332,8 @@ export default function GameCanvas({
     const renderScene = (
       context: CanvasRenderingContext2D,
       width: number,
-      height: number
+      height: number,
+      camScale: number
     ) => {
       const s = stateRef.current;
 
@@ -1325,10 +1344,13 @@ export default function GameCanvas({
       // Save canvas state for camera transforms
       context.save();
 
-      // Camera centering + screen shake offset
-      const offsetX = width / 2 - s.camera.x + s.screenShake.x;
-      const offsetY = height / 2 - s.camera.y + s.screenShake.y;
-      context.translate(offsetX, offsetY);
+      // Camera centering + responsive zoom + screen shake offset
+      context.translate(width / 2, height / 2);
+      context.scale(camScale, camScale);
+      context.translate(
+        -s.camera.x + s.screenShake.x,
+        -s.camera.y + s.screenShake.y
+      );
 
       // 1. Draw Arena Floor & Grid
       context.fillStyle = "#0d1117";
